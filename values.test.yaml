@@ -4,6 +4,19 @@ httpRoute:
 backend:
   image:
     tag: "n27"
+  env:
+    - name: ASPNETCORE_URLS
+      value: "http://+:8080"
+    - name: AllowedHosts
+      value: "*"
+    - name: ConnectionStrings__MongoConnection__ConnectionString
+      valueFrom:
+        secretKeyRef:
+          name: loan-secrets
+          key: mongo-sc
+    - name: ConnectionStrings__MongoConnection__Database
+      value: loan-test
+
 
 frontend:
   image:
