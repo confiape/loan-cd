@@ -1,0 +1,11 @@
+httpRoute:
+  hostnames:
+  - confiape.org
+backend:
+  image:
+    tag: "n27"
+
+frontend:
+  image:
+    tag: "n27-f"
+    
