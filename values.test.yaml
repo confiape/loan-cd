@@ -1,6 +1,6 @@
 httpRoute:
   hostnames:
-  - confiape.org
+  - test.confiape.org
 backend:
   image:
     tag: "n27"
