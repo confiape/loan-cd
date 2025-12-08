@@ -1,0 +1,35 @@
+{{- if .Values.backend.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "ConfiaPe.Loans.CD.fullname" . }}-test-backend"
+  labels:
+    {{- include "ConfiaPe.Loans.CD.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "ConfiaPe.Loans.CD.fullname" . }}-backend:{{ .Values.backend.service.port }}']
+  restartPolicy: Never
+{{- end }}
+---
+{{- if .Values.frontend.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "ConfiaPe.Loans.CD.fullname" . }}-test-frontend"
+  labels:
+    {{- include "ConfiaPe.Loans.CD.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "ConfiaPe.Loans.CD.fullname" . }}-frontend:{{ .Values.frontend.service.port }}']
+  restartPolicy: Never
+{{- end }}
