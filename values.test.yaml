@@ -1,6 +1,3 @@
-httpRoute:
-  hostnames:
-  - test.confiape.org
 backend:
   image:
     tag: "n27"
@@ -17,8 +14,6 @@ backend:
     - name: ConnectionStrings__MongoConnection__Database
       value: loan-test
 
-
 frontend:
   image:
     tag: "n27-f"
-    

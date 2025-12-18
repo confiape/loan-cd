@@ -1,51 +1,19 @@
 1. Get the application URL by running these commands:
 
-{{- if or .Values.backend.httpRoute.enabled .Values.frontend.httpRoute.enabled }}
-{{- if .Values.httpRoute.hostnames }}
-  export APP_HOSTNAME={{ .Values.httpRoute.hostnames | first }}
+KRAKEND API GATEWAY:
+{{- if eq .Values.krakend.service.type "LoadBalancer" }}
+  export KRAKEND_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "ConfiaPe.Loans.CD.fullname" . }}-krakend -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  echo "API Gateway: http://$KRAKEND_IP:{{ .Values.krakend.service.port }}"
+{{- else if eq .Values.krakend.service.type "NodePort" }}
+  export NODE_PORT=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "ConfiaPe.Loans.CD.fullname" . }}-krakend -o jsonpath='{.spec.ports[0].nodePort}')
+  export NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
+  echo "API Gateway: http://$NODE_IP:$NODE_PORT"
 {{- else }}
-  export APP_HOSTNAME=$(kubectl get --namespace {{(first .Values.httpRoute.parentRefs).namespace | default .Release.Namespace }} gateway/{{ (first .Values.httpRoute.parentRefs).name }} -o jsonpath="{.spec.listeners[0].hostname}")
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "ConfiaPe.Loans.CD.name" . }},app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=krakend" -o jsonpath="{.items[0].metadata.name}")
+  echo "API Gateway: http://127.0.0.1:8080"
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:{{ .Values.krakend.service.port }}
 {{- end }}
 
-{{- if .Values.frontend.httpRoute.enabled }}
-FRONTEND:
-{{- if and .Values.frontend.httpRoute.rules (first .Values.frontend.httpRoute.rules).matches (first (first .Values.frontend.httpRoute.rules).matches).path.value }}
-  echo "Visit http://$APP_HOSTNAME{{ (first (first .Values.frontend.httpRoute.rules).matches).path.value }} to use your frontend"
-{{- end }}
-{{- end }}
-
-{{- if .Values.backend.httpRoute.enabled }}
-BACKEND:
-{{- if and .Values.backend.httpRoute.rules (first .Values.backend.httpRoute.rules).matches (first (first .Values.backend.httpRoute.rules).matches).path.value }}
-  echo "Visit http://$APP_HOSTNAME{{ (first (first .Values.backend.httpRoute.rules).matches).path.value }} to use your backend API"
-{{- end }}
-{{- end }}
-
-  NOTE: Your HTTPRoute depends on the listener configuration of your gateway and your HTTPRoute rules.
-  The rules can be set for path, method, header and query parameters.
-  You can check the gateway configuration with 'kubectl get --namespace {{(first .Values.httpRoute.parentRefs).namespace | default .Release.Namespace }} gateway/{{ (first .Values.httpRoute.parentRefs).name }} -o yaml'
-
-{{- else if .Values.ingress.enabled }}
-{{- range $host := .Values.ingress.hosts }}
-  {{- range .paths }}
-  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
-  {{- end }}
-{{- end }}
-
-{{- else }}
-To access your services, use port-forwarding:
-
-{{- if .Values.frontend.enabled }}
-FRONTEND:
-  export FRONTEND_POD=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "ConfiaPe.Loans.CD.name" . }},app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=frontend" -o jsonpath="{.items[0].metadata.name}")
-  echo "Visit http://127.0.0.1:8080 to use your frontend"
-  kubectl --namespace {{ .Release.Namespace }} port-forward $FRONTEND_POD 8080:{{ .Values.frontend.service.port }}
-{{- end }}
-
-{{- if .Values.backend.enabled }}
-BACKEND:
-  export BACKEND_POD=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "ConfiaPe.Loans.CD.name" . }},app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=backend" -o jsonpath="{.items[0].metadata.name}")
-  echo "Visit http://127.0.0.1:8081 to use your backend API"
-  kubectl --namespace {{ .Release.Namespace }} port-forward $BACKEND_POD 8081:{{ .Values.backend.service.port }}
-{{- end }}
-{{- end }}
+  Endpoints:
+  - Frontend: /
+  - Backend API: /api/*

@@ -1,0 +1,72 @@
+{{- if .Values.krakend.enabled -}}
+{{- $fullName := include "ConfiaPe.Loans.CD.fullname" . -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $fullName }}-krakend-config
+  labels:
+    {{- include "ConfiaPe.Loans.CD.labels" . | nindent 4 }}
+    app.kubernetes.io/component: krakend
+data:
+  krakend.json: |
+    {
+      "$schema": "https://www.krakend.io/schema/krakend.json",
+      "version": 3,
+      "name": "{{ $fullName }}-gateway",
+      "port": {{ .Values.krakend.service.port }},
+      "timeout": "{{ .Values.krakend.config.timeout }}",
+      "cache_ttl": "{{ .Values.krakend.config.cacheTTL }}",
+      "output_encoding": "json",
+      "extra_config": {
+        {{- if .Values.krakend.config.cors.enabled }}
+        "security/cors": {
+          "allow_origins": {{ .Values.krakend.config.cors.allowOrigins | toJson }},
+          "allow_methods": {{ .Values.krakend.config.cors.allowMethods | toJson }},
+          "allow_headers": {{ .Values.krakend.config.cors.allowHeaders | toJson }},
+          "expose_headers": {{ .Values.krakend.config.cors.exposeHeaders | toJson }},
+          "max_age": "{{ .Values.krakend.config.cors.maxAge }}"
+        },
+        {{- end }}
+        "router": {
+          "return_error_msg": true
+        }
+      },
+      "endpoints": [
+        {{- $backendHost := printf "http://%s-backend:%d" $fullName (int .Values.backend.service.port) -}}
+        {{- $frontendHost := printf "http://%s-frontend:%d" $fullName (int .Values.frontend.service.port) -}}
+        {{- $endpoints := list }}
+        {{- range $i, $endpoint := .Values.krakend.config.endpoints }}
+        {{- if $i }},{{ end }}
+        {
+          "endpoint": "{{ $endpoint.endpoint }}",
+          "method": "{{ $endpoint.method | default "GET" }}",
+          {{- if $endpoint.outputEncoding }}
+          "output_encoding": "{{ $endpoint.outputEncoding }}",
+          {{- end }}
+          {{- if $endpoint.inputHeaders }}
+          "input_headers": {{ $endpoint.inputHeaders | toJson }},
+          {{- end }}
+          {{- if $endpoint.inputQueryStrings }}
+          "input_query_strings": {{ $endpoint.inputQueryStrings | toJson }},
+          {{- end }}
+          "backend": [
+            {
+              {{- if eq $endpoint.backend "backend" }}
+              "host": ["{{ $backendHost }}"],
+              {{- else if eq $endpoint.backend "frontend" }}
+              "host": ["{{ $frontendHost }}"],
+              {{- else }}
+              "host": ["{{ $endpoint.backendHost }}"],
+              {{- end }}
+              "url_pattern": "{{ $endpoint.urlPattern | default $endpoint.endpoint }}",
+              {{- if $endpoint.encoding }}
+              "encoding": "{{ $endpoint.encoding }}",
+              {{- end }}
+              "method": "{{ $endpoint.backendMethod | default $endpoint.method | default "GET" }}"
+            }
+          ]
+        }
+        {{- end }}
+      ]
+    }
+{{- end }}

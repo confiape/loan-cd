@@ -1,0 +1,95 @@
+{{- if .Values.krakend.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ConfiaPe.Loans.CD.fullname" . }}-krakend
+  labels:
+    {{- include "ConfiaPe.Loans.CD.labels" . | nindent 4 }}
+    app.kubernetes.io/component: krakend
+spec:
+  {{- if not .Values.krakend.autoscaling.enabled }}
+  replicas: {{ .Values.krakend.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "ConfiaPe.Loans.CD.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: krakend
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-krakend.yaml") . | sha256sum }}
+        {{- with .Values.krakend.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "ConfiaPe.Loans.CD.labels" . | nindent 8 }}
+        app.kubernetes.io/component: krakend
+        {{- with .Values.krakend.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "ConfiaPe.Loans.CD.serviceAccountName" . }}
+      {{- with .Values.krakend.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: krakend
+          {{- with .Values.krakend.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.krakend.image.repository }}:{{ .Values.krakend.image.tag }}"
+          imagePullPolicy: {{ .Values.krakend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.krakend.service.port }}
+              protocol: TCP
+          {{- with .Values.krakend.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.krakend.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.krakend.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.krakend.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: krakend-config
+              mountPath: /etc/krakend/krakend.json
+              subPath: krakend.json
+              readOnly: true
+            {{- with .Values.krakend.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: krakend-config
+          configMap:
+            name: {{ include "ConfiaPe.Loans.CD.fullname" . }}-krakend-config
+        {{- with .Values.krakend.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.krakend.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.krakend.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.krakend.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

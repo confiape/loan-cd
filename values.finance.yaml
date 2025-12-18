@@ -1,0 +1,46 @@
+backend:
+  image:
+    repository: confiape/finance
+    tag: "backend"
+  env:
+    - name: DB_HOST
+      value: "postgres-ha-rw.postgres.svc.cluster.local"
+    - name: DB_PORT
+      value: "5432"
+    - name: DB_NAME
+      value: "finance-app"
+    - name: DB_USER
+      valueFrom:
+        secretKeyRef:
+          name: postgres-user
+          key: username
+    - name: DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: postgres-user
+          key: password
+
+    # Server Configuration
+    - name: PORT
+      value: "8080"
+    - name: GIN_MODE
+      value: "release"
+
+    # JWT Configuration
+    - name: JWT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: finance-app-secrets
+          key: jwt-secret
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+frontend:
+  image:
+    repository: confiape/finance
+    tag: "frontend"
+  service:
+    type: ClusterIP
+    port: 80  
