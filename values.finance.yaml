@@ -46,8 +46,8 @@ backend:
       port: 8080
 frontend:
   image:
-    repository: confiape/finance-2
-    tag: "frontend"
+    repository: confiape/finance
+    tag: "frontend-2"
   service:
     type: ClusterIP
     port: 80  
