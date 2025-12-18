@@ -8,7 +8,7 @@ backend:
     - name: DB_PORT
       value: "5432"
     - name: DB_NAME
-      value: "finance-app"
+      value: "finance"
     - name: DB_USER
       valueFrom:
         secretKeyRef:
