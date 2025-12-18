@@ -342,6 +342,16 @@ krakend:
 
       # Frontend endpoints - route to frontend service
       # Using no-op encoding to pass through HTML/JS/CSS without modification
+      # Root path (/) - must be defined separately
+      - endpoint: "/"
+        method: "GET"
+        backend: "frontend"
+        urlPattern: "/"
+        outputEncoding: "no-op"
+        inputHeaders: ["*"]
+        inputQueryStrings: ["*"]
+
+      # All other paths
       - endpoint: "/{path}"
         method: "GET"
         backend: "frontend"
