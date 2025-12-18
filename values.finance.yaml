@@ -36,7 +36,14 @@ backend:
   service:
     type: ClusterIP
     port: 8080
-
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8080
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 8080
 frontend:
   image:
     repository: confiape/finance

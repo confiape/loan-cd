@@ -334,7 +334,7 @@ krakend:
         backend: "frontend"
         urlPattern: ""
         wildcard: true
-        wildcardDepth: 4
+        wildcardDepth: 6
         outputEncoding: "no-op"
         backendEncoding: "no-op"
         inputHeaders: ["*"]
