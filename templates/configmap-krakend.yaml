@@ -34,12 +34,33 @@ data:
       "endpoints": [
         {{- $backendHost := printf "http://%s-backend:%d" $fullName (int .Values.backend.service.port) -}}
         {{- $frontendHost := printf "http://%s-frontend:%d" $fullName (int .Values.frontend.service.port) -}}
-        {{- $endpoints := list }}
-        {{- range $i, $endpoint := .Values.krakend.config.endpoints }}
-        {{- if $i }},{{ end }}
+        {{- $first := true -}}
+        {{- range $endpoint := .Values.krakend.config.endpoints }}
+        {{- $host := "" -}}
+        {{- if eq $endpoint.backend "backend" -}}
+          {{- $host = $backendHost -}}
+        {{- else if eq $endpoint.backend "frontend" -}}
+          {{- $host = $frontendHost -}}
+        {{- else -}}
+          {{- $host = $endpoint.backendHost -}}
+        {{- end -}}
+        {{- if $endpoint.wildcard }}
+        {{- /* Generate wildcard routes with 1 to N path segments */ -}}
+        {{- $depth := $endpoint.wildcardDepth | default 6 -}}
+        {{- $prefix := $endpoint.endpoint -}}
+        {{- $urlPrefix := $endpoint.urlPattern | default $endpoint.endpoint -}}
+        {{- range $i := until (int $depth) -}}
+        {{- $segments := "" -}}
+        {{- range $j := until (add1 $i | int) -}}
+          {{- $segments = printf "%s/{p%d}" $segments $j -}}
+        {{- end -}}
+        {{- if not $first }},{{ end }}
+        {{- $first = false }}
         {
-          "endpoint": "{{ $endpoint.endpoint }}",
-          "method": "{{ $endpoint.method | default "GET" }}",
+          "endpoint": "{{ $prefix }}{{ $segments }}",
+          {{- if $endpoint.method }}
+          "method": "{{ $endpoint.method }}",
+          {{- end }}
           {{- if $endpoint.outputEncoding }}
           "output_encoding": "{{ $endpoint.outputEncoding }}",
           {{- end }}
@@ -51,21 +72,44 @@ data:
           {{- end }}
           "backend": [
             {
-              {{- if eq $endpoint.backend "backend" }}
-              "host": ["{{ $backendHost }}"],
-              {{- else if eq $endpoint.backend "frontend" }}
-              "host": ["{{ $frontendHost }}"],
-              {{- else }}
-              "host": ["{{ $endpoint.backendHost }}"],
+              "host": ["{{ $host }}"],
+              "url_pattern": "{{ $urlPrefix }}{{ $segments }}"
+              {{- if $endpoint.backendEncoding }},
+              "encoding": "{{ $endpoint.backendEncoding }}"
               {{- end }}
-              "url_pattern": "{{ $endpoint.urlPattern | default $endpoint.endpoint }}",
-              {{- if $endpoint.encoding }}
-              "encoding": "{{ $endpoint.encoding }}",
-              {{- end }}
-              "method": "{{ $endpoint.backendMethod | default $endpoint.method | default "GET" }}"
             }
           ]
         }
+        {{- end }}
+        {{- else }}
+        {{- /* Regular endpoint without wildcard */ -}}
+        {{- if not $first }},{{ end }}
+        {{- $first = false }}
+        {
+          "endpoint": "{{ $endpoint.endpoint }}",
+          {{- if $endpoint.method }}
+          "method": "{{ $endpoint.method }}",
+          {{- end }}
+          {{- if $endpoint.outputEncoding }}
+          "output_encoding": "{{ $endpoint.outputEncoding }}",
+          {{- end }}
+          {{- if $endpoint.inputHeaders }}
+          "input_headers": {{ $endpoint.inputHeaders | toJson }},
+          {{- end }}
+          {{- if $endpoint.inputQueryStrings }}
+          "input_query_strings": {{ $endpoint.inputQueryStrings | toJson }},
+          {{- end }}
+          "backend": [
+            {
+              "host": ["{{ $host }}"],
+              "url_pattern": "{{ $endpoint.urlPattern | default $endpoint.endpoint }}"
+              {{- if $endpoint.backendEncoding }},
+              "encoding": "{{ $endpoint.backendEncoding }}"
+              {{- end }}
+            }
+          ]
+        }
+        {{- end }}
         {{- end }}
       ]
     }

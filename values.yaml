@@ -303,62 +303,36 @@ krakend:
     # backend: "backend" will route to the backend service
     # backend: "frontend" will route to the frontend service
     # Or use backendHost for custom hosts
+    #
+    # Use wildcard: true to auto-generate routes for multi-segment paths
+    # wildcardDepth: N controls how many levels deep (default: 6)
+    # Omitting "method" allows ALL HTTP methods (GET, POST, PUT, DELETE, PATCH, etc.)
     endpoints:
-      # API endpoints - route to backend
-      - endpoint: "/api/{path}"
-        method: "GET"
+      # API endpoints - route to backend (auto-generates /api/{p0}, /api/{p0}/{p1}, etc.)
+      - endpoint: "/api"
         backend: "backend"
-        urlPattern: "/api/{path}"
+        urlPattern: "/api"
+        wildcard: true
+        wildcardDepth: 6
         inputHeaders: ["*"]
         inputQueryStrings: ["*"]
 
-      - endpoint: "/api/{path}"
-        method: "POST"
-        backend: "backend"
-        urlPattern: "/api/{path}"
-        inputHeaders: ["*"]
-        inputQueryStrings: ["*"]
-
-      - endpoint: "/api/{path}"
-        method: "PUT"
-        backend: "backend"
-        urlPattern: "/api/{path}"
-        inputHeaders: ["*"]
-        inputQueryStrings: ["*"]
-
-      - endpoint: "/api/{path}"
-        method: "DELETE"
-        backend: "backend"
-        urlPattern: "/api/{path}"
-        inputHeaders: ["*"]
-        inputQueryStrings: ["*"]
-
-      - endpoint: "/api/{path}"
-        method: "PATCH"
-        backend: "backend"
-        urlPattern: "/api/{path}"
-        inputHeaders: ["*"]
-        inputQueryStrings: ["*"]
-
-      # Frontend endpoints - route to frontend service
-      # Using no-op encoding to pass through HTML/JS/CSS without modification
-      # Root path (/) - must be defined separately
+      # Frontend root path
       - endpoint: "/"
-        method: "GET"
         backend: "frontend"
         urlPattern: "/"
-        outputEncoding: "no-op"
         inputHeaders: ["*"]
         inputQueryStrings: ["*"]
 
-      # All other paths
-      - endpoint: "/{path}"
-        method: "GET"
+      # Frontend static assets and routes (auto-generates /{p0}, /{p0}/{p1}, etc.)
+      - endpoint: ""
         backend: "frontend"
-        urlPattern: "/{path}"
-        outputEncoding: "no-op"
+        urlPattern: ""
+        wildcard: true
+        wildcardDepth: 4
         inputHeaders: ["*"]
         inputQueryStrings: ["*"]
+
 
   # Probes
   livenessProbe:
