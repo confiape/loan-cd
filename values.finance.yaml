@@ -32,6 +32,11 @@ backend:
         secretKeyRef:
           name: finance-app-secrets
           key: jwt-secret
+    - name: GOOGLE_CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: finance-app-secrets
+          key: google-client-id
 
   service:
     type: ClusterIP
