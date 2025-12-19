@@ -28,7 +28,8 @@ data:
         },
         {{- end }}
         "router": {
-          "return_error_msg": true
+          "return_error_msg": true,
+          "max_multipart_memory": 52428800
         }
       },
       "endpoints": [
