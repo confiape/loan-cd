@@ -286,7 +286,7 @@ krakend:
   # KrakenD configuration
   config:
     # Global timeout for all endpoints
-    timeout: "30000ms"
+    timeout: "120000ms"
     # Cache TTL
     cacheTTL: "300s"
 
