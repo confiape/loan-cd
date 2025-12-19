@@ -1,7 +1,7 @@
 backend:
   image:
     repository: confiape/finance
-    tag: "backend"
+    tag: "backend-v2"
   env:
     - name: DB_HOST
       value: "postgres-ha-rw.postgres.svc.cluster.local"
